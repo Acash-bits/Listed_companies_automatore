@@ -7,7 +7,7 @@ from typing import Optional, Dict
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv
 
 class CompanyDataExtractor:
     def __init__(self, host: str, database: str, user: str, password: str):
@@ -25,7 +25,8 @@ class CompanyDataExtractor:
                 host=self.host,
                 database=self.database,
                 user=self.user,
-                password=self.password
+                password=self.password,
+                port = 3306
             )
             if self.connection.is_connected():
                 print("Successfully connected to database")
@@ -37,8 +38,8 @@ class CompanyDataExtractor:
     def get_company_symbols(self) -> list:
         """Fetch company symbols from india_listed_companies table"""
         if not self.connection or not self.connection.is_connected():
-            print("Not connected to database")
-            return []
+            print('Not connected to database')
+            return[] 
         
         try:
             cursor = self.connection.cursor()
@@ -63,6 +64,7 @@ class CompanyDataExtractor:
             # Extract required fields
             data = {
                 'symbol': symbol,
+                'company_name': info.get('longName', None),
                 'revenue': info.get('totalRevenue', None),
                 'market_cap': info.get('marketCap', None),
                 'industry': info.get('industry', None),
@@ -89,6 +91,7 @@ class CompanyDataExtractor:
             create_table_query = """
             CREATE TABLE IF NOT EXISTS India_listed_companies_information (
                 id INT AUTO_INCREMENT PRIMARY KEY,
+                company_name VARCHAR(512),
                 symbol VARCHAR(512) NOT NULL UNIQUE,
                 revenue BIGINT,
                 market_cap BIGINT,
@@ -118,9 +121,10 @@ class CompanyDataExtractor:
             
             insert_query = """
             INSERT INTO India_listed_companies_information 
-            (symbol, revenue, market_cap, industry, sector)
-            VALUES (%s, %s, %s, %s, %s)
+            (company_name, symbol, revenue, market_cap, industry, sector)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE
+            company_name = VALUES(company_name),
             revenue = VALUES(revenue),
             market_cap = VALUES(market_cap),
             industry = VALUES(industry),
@@ -128,6 +132,7 @@ class CompanyDataExtractor:
             """
             
             values = (
+                data['company_name'],
                 data['symbol'],
                 data['revenue'],
                 data['market_cap'],
@@ -190,15 +195,16 @@ class CompanyDataExtractor:
             self.connection.close()
             print("\nDatabase connection closed")
 
+load_dotenv()
 
 # Main execution
 if __name__ == "__main__":
     # Database configuration
     DB_CONFIG = {
-        'host': os.getenv('db_host'),          # Change to your host
-        'database': 'india_listed_companies',  # Change to your database name
-        'user': os.getenv('db_user'),      # Change to your username
-        'password': os.getenv('db_password')   # Change to your password
+        'host': 'localhost',                               # os.getenv('DB_HOST'),          # Change to your host
+        'database': 'listed_companies',  # Change to your database name
+        'user': 'root',      # Change to your username
+        'password': '1234'   # Change to your password
     }
     
     # Create extractor instance
